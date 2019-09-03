@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+
+<head>
+    <title>UML Plugin</title>
+	
+	<style>
+		div.relative {
+			position: relative;
+			left: 50px;
+		}
+		div.buttons {
+			position: relative;
+			left: 350px;
+		}		
+		#fileLoader
+		{
+			display:none;
+		}
+	</style>
+	
+	<script type="text/javascript"> 
+			function openfile() {
+			var fileLoader = document.getElementById('fileLoader').click();
+			var x = document.getElementById("fileLoader").value;
+			document.getElementById("demo").innerHTML = x;
+			document.getElementById("demo").value=x;
+			}
+	</script>
+	
+</head>
+
+<h2>UML Plugin</h2>
+
+<body>
+
+   <form>
+  <b>DMBS:</b>
+  <select name="servers" style="width: 250px">
+	<option value="mssql">MSSQL Server</option>
+	<option value="mysql">MySQL Server</option>
+  </select>
+  <br></br>
+  <b>Server:</b>
+  <action>
+	<input type="radio" name="servertype" value="localserver"> Local server</input>
+	<input type="radio" name="servertype" value="remoteserver"> Remote server</input>
+  </action>
+  <br></br>
+  
+  <select name="getservers" style="width: 250px; position= relative; left: 30px;">
+  </select>
+  <input type="text" name="serverremotename" size="35"></input> 
+  <br></br>
+  
+  <div class="relative">Authentication
+  <select name="authentication" style="width: 250px">
+	<option value="windows">Windows Authentication</option>
+	<option value="sql">SQL Authentication</option>
+  </select></div>
+  <br></br>
+  <div class="relative">User name
+	<input type="text" name="tbusername" size="35">
+  </input></div>
+  <br></br>
+  <div class="relative">Password
+	<input type="text" name="tbPassword" size="35">
+  </input></div>
+  <br></br>
+  <div class="relative">Database
+	<select name="databases" style="width: 250px">
+  </select></div>
+  <br></br>
+  <div class="buttons">
+	<button type="button">Check connection</button>
+  </div>
+
+	<br></br>
+  <b>Output file path</b>
+	<input type="text" name="outfilepath" size="50" id ="demo">
+		<input type="file" id="fileLoader" name="files" title="Load File" onchange="openfile()" />
+		<button type="button" id="btnOpenFileDialog" onclick="openfile()">...</button>
+	</input> 
+	<p id="demo"></p>
+	
+  <br></br>
+  <br></br>
+
+  <div class="buttons">
+	<button type="button"><b>Generate</b></button>
+  </div>
+  
+
+  
+</form>
+
+</body>
+
+</html>

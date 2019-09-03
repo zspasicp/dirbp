@@ -1,0 +1,471 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+
+<head>
+<script type="text/javascript" src="jquery.min.js"></script>
+<script type="text/javascript" src="./mdsd/jsuml2/build/UDCore.js"></script>
+<script type="text/javascript" src="./mdsd/jsuml2/build/UDModules.js"></script>
+<script type="text/javascript" src="./mdsd/lib/model.js"></script>
+<script type="text/javascript" src="./mdsd/lib/ui_controls.js"></script>
+
+<link type="text/css" rel="stylesheet"
+	href="./mdsd/jsuml2/build/css/UDStyle.css" media="screen">
+<link type="text/css" rel="stylesheet" href="./bootstrap.min.css">
+<title>REDBUL</title>
+
+<style>
+div.relative {
+	position: relative;
+	left: 50px;
+}
+
+div.buttons {
+	position: relative;
+	left: 350px;
+}
+
+#fileLoader {
+	display: none;
+}
+
+#block_container {
+	text-align: center;
+}
+
+#bloc1, #bloc2 {
+	display: inline;
+}
+
+
+.loader {
+	position:absolute;
+	top: 50%;
+left: 50%;
+margin: -50px 0px 0px -50px;
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid blue;
+  border-bottom: 16px solid blue;
+  width: 80px;
+  height: 80px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+</style>
+
+<script type="text/javascript">
+	function openfile() {
+		var fileLoader = document.getElementById('fileLoader').click();
+		var x = document.getElementById("fileLoader").value;
+		document.getElementById("demo").innerHTML = x;
+		document.getElementById("demo").value = x;
+	}
+
+	function generateFile(isShowFile) {
+		
+		//document.getElementById('loader').style.display = 'block';
+		document.getElementById('idloader').style.visibility = "visible";	
+		var obj = {};
+		var chatinput = document.getElementById('tbFileName').value;
+		if (chatinput == "" || chatinput.length == 0 || chatinput == null) {
+			alert("Morate popuniti ime fajla!");
+		} else if (document.getElementById('cbAuthentication').selectedIndex == 1
+				&& (!document.getElementById('tbuser').value || (!document
+						.getElementById('tbPassword').value))) {
+			alert("Obavezan je unos korisnickog imena i lozinke!");
+		} else {
+			var e = document.getElementById('cbServerList');
+			if (document.getElementById('rbrLocalServer').checked) {
+				var e = document.getElementById('cbServerList');
+				if (document.getElementById('cbServers').selectedIndex == 1) {
+					obj['servername'] = "";
+				} else {
+					obj['servername'] = "";//e.options[e.selectedIndex].value;
+				}
+			} else if (document.getElementById('rbrRemoteServer').checked) {
+				obj['servername'] = document.getElementById('tbRemoteServer').value;
+			}
+			obj['username'] = document.getElementById('tbuser').value;
+			obj['password'] = document.getElementById('tbPassword').value;
+			var edatabase = document.getElementById('cbDatabaseList');
+			obj['databasename'] = edatabase.options[edatabase.selectedIndex].value;
+
+			var sub = document.getElementById('tbFileName').value.trim();
+			var sub1 = sub.substring(sub.length, sub.length - 4);
+			var fileNameFull;
+			if (document.getElementById('tbFileName').value.trim().length <= 4
+					|| (document.getElementById('tbFileName').value.trim().length > 4 && document
+							.getElementById('tbFileName').value.trim()
+							.substring(
+									document.getElementById('tbFileName').value
+											.trim().length,
+									document.getElementById('tbFileName').value
+											.trim().length - 4) != ".uml")) {
+				fileNameFull = document.getElementById('tbFileName').value
+						+ ".uml";
+			} else {
+				fileNameFull = document.getElementById('tbFileName').value;
+			}
+			obj['filename'] = fileNameFull;
+
+			var x = document.getElementById('cbServers').selectedIndex;
+			if (x == 0) {
+				obj['servertype'] = "0";
+			} else {
+				obj['servertype'] = "1";
+			}
+			var y = document.getElementById('cbAuthentication').selectedIndex;
+			if (y == 0) {
+				obj['auttype'] = "0";
+			} else {
+				obj['auttype'] = "1";
+			}
+
+			var urlFile = isShowFile ? "/redbul/api/data/generateAll"
+					: "/redbul/api/data/generateFile";
+			$
+					.ajax({
+						type : "POST",
+						data : JSON.stringify(obj),
+						contentType : 'application/json',
+						url : urlFile,
+						success : function(data) {
+							//alert("Fajl je uspješno saèuvan!!!");
+
+							document.getElementById('idloader').style.visibility = "hidden";						
+							
+							if (isShowFile) {
+								console.log("ispis konzole");
+								console.log(data);
+								console.log("ispis konzole");
+								var response = JSON.parse(data);
+
+								var objectUrl = window.URL
+										.createObjectURL(new Blob(
+												[ response['uml'] ], {
+													type : 'text/xml'
+												}));
+								var save = document.createElement('a');
+								save.href = objectUrl;
+								save.target = '_blank';
+								save.download = fileNameFull;//"Export.uml";
+								let event = document.createEvent('MouseEvents');
+								event.initMouseEvent("click", true, false,
+										window, 0, 0, 0, 0, 0, false, false,
+										false, false, 0, null);
+								save.dispatchEvent(event);
+
+								initAll();
+								readUML(
+										response['uml'],
+										edatabase.options[edatabase.selectedIndex].value);
+								readNotation(response['notation']);
+							}
+						},
+					});
+		}
+	}
+
+	function checkConnection() {
+		var obj = {};
+		document.getElementById('idloader').style.visibility = "visible";
+		obj['username'] = document.getElementById('tbuser').value;
+		obj['password'] = document.getElementById('tbPassword').value;
+
+		$
+				.getJSON(
+						'https://api.ipify.org?format=json',
+						function(data) {
+							obj['publicip'] = data.ip;
+							console.log(JSON.stringify(obj));
+
+							if (document.getElementById('rbrLocalServer').checked) {
+								var e = document.getElementById('cbServerList');
+
+								if (document.getElementById('cbServers').selectedIndex == 1) {
+									obj['servername'] = "";
+								} else {
+									obj['servername'] = "";//e.options[e.selectedIndex].value;
+								}
+							} else if (document
+									.getElementById('rbrRemoteServer').checked) {
+								obj['servername'] = document
+										.getElementById('tbRemoteServer').value;
+							}
+
+							var x = document.getElementById('cbServers').selectedIndex;
+							if (x == 0) {
+								obj['servertype'] = "0";
+							} else {
+								obj['servertype'] = "1";
+							}
+							var y = document.getElementById('cbAuthentication').selectedIndex;
+							if (y == 0) {
+								obj['auttype'] = "0";
+							} else {
+								obj['auttype'] = "1";
+							}
+
+							if (document.getElementById('rbrRemoteServer').checked
+									&& !document
+											.getElementById('tbRemoteServer').value) {
+								alert("Obavezno je unijeti adresu udaljenog servera!");
+							} else if (y == 1
+									&& (!document.getElementById('tbuser').value || !document
+											.getElementById('tbPassword').value)) {
+								alert("Obavezan je unos korisnièkog imena i lozike!");
+							} else {
+								$
+										.ajax({
+											type : "POST",
+											data : JSON.stringify(obj),
+											contentType : 'application/json',
+											url : "/redbul/api/data/connectionSqlAut",
+											success : function(data) {
+												document.getElementById('idloader').style.visibility = "hidden";
+												var options = "";
+												data
+														.forEach(function(
+																element) {
+															options += '<option value="'+element["databasename"]+'">'
+																	+ element["databasename"]
+																	+ '</option>'
+
+														});
+												document
+														.getElementById("cbDatabaseList").innerHTML = options;
+											},
+											error : function(data) {
+												document.getElementById('idloader').style.visibility = "hidden";
+												alert("Konekcija nije uspostavljena! Pokušajte ponovo!");
+											},
+											dataType : 'json',
+
+										});
+							}
+						});
+
+	}
+
+	function showHide(x) {
+		if (x == 0) {
+			document.getElementById('tbRemoteServer').style.display = 'none'
+			document.getElementById('cbServerList').style.display = 'none'
+
+			$
+					.ajax({
+						type : "GET",
+						url : "/redbul/api/data/servers",
+						success : function(data) {
+							var options = "";
+							data.forEach(function(element) {
+								var res = element["servername"].replace(/\\/g,
+										"\\");
+								options += '<option value="'+res+'">' + res
+										+ '</option>'
+							});
+							document.getElementById("cbServerList").innerHTML = options;
+						},
+						dataType : 'json',
+					});
+
+		} else {
+			document.getElementById('tbRemoteServer').style.display = 'block';
+			document.getElementById('cbServerList').style.display = 'none'
+		}
+		return;
+	}
+
+	function showHideAut(x) {
+		if (x == 'windows') {
+			document.getElementById('tbuser').setAttribute("disabled", true);
+			document.getElementById('tbPassword')
+					.setAttribute("disabled", true);
+			document.getElementById('lblUsername').setAttribute("disabled",
+					true);
+			document.getElementById('lblPassword').setAttribute("disabled",
+					true);
+			document.getElementById('tbuser').value = "";
+			document.getElementById('tbPassword').value = "";
+		} else {
+			document.getElementById('tbuser').removeAttribute('disabled');
+			document.getElementById('lblUsername').removeAttribute('disabled');
+			document.getElementById('tbPassword').removeAttribute('disabled');
+			document.getElementById('lblPassword').removeAttribute('disabled');
+		}
+		return;
+	}
+
+	function onLoad() {
+		document.getElementById('rbrLocalServer').click();
+		document.getElementById('idloader').style.visibility = "hidden";	
+		showHideAut('windows');
+		
+	}
+</script>
+
+</head>
+<br />
+
+
+<body onload="onLoad()">
+
+	<form>
+		<div class="container">
+			<h2>
+				REDBUL <span style="font-weight: normal">(<b>R</b>everse <b>E</b>ngineering
+					of <b>D</b>ata<b>B</b>ases to <b>U</b>m<b>L</b>)
+				</span>
+			</h2>
+			<br></br>
+
+			<div class="row">
+
+				<div class="col-md-4">
+					<div>
+						<b><label>DMBS:</label></b> <select class="form-control"
+							name="servers" id="cbServers">
+							<option value="mssql">MSSQL Server</option>
+							<option value="mysql">MySQL Server</option>
+						</select>
+					</div>
+
+					<b>Server:</b>
+					<action> <input type="radio" name="servertype"
+						value="localserver" onclick="showHide(0)" id="rbrLocalServer">
+					Local server</input> <input type="radio" name="servertype"
+						value="remoteserver" onclick="showHide(1)" id="rbrRemoteServer">
+					Remote server</input> </action>
+
+					<select class="form-control" name="getservers"
+						position = relative; left: 30px;"
+						id="cbServerList">
+					</select> <input class="form-control" type="text" name="serverremotename"
+						id="tbRemoteServer"></input> <br />
+				</div>
+
+				<div class="col-md-4">
+					<div class="relative form-group row">
+						<div class="col-md-4 text-right">
+							<label>Authentication</label>
+						</div>
+						<div class="col-md-8">
+							<select class="form-control" name="authentication"
+								onchange="showHideAut(this.value)"
+								id="cbAuthentication">
+								<option value="windows" id="winaut" selected="selected">Windows
+									Authentication</option>
+								<option value="sql" id="sqlaut">SQL Authentication</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="relative form-group row">
+						<div class="col-md-4 text-right">
+							<label for="lusername" id="lblUsername">User name </label>
+						</div>
+						<div class="col-md-8">
+							<input class="form-control" type="text" name="tbusername"
+								id="tbuser"> </input>
+						</div>
+					</div>
+
+					<div class="relative form-group row">
+						<div class="col-md-4 text-right">
+							<label for="lpassword" id="lblPassword">Password</label>
+						</div>
+						<div class="col-md-8">
+							<input class="form-control" type="password" name="tbPass"
+								id="tbPassword"> </input>
+						</div>
+					</div>
+
+				<div class="relative form-group row">
+				<div class="col-md-12">
+						<button type="button" class="btn btn-primary float-right" 
+							onclick="checkConnection()" >Check
+							connection</button>
+					</div>
+					</div>
+
+					
+				</div>
+
+				<div class="col-md-4">
+					<div class=" relative form-group row">
+						<div class="col-md-4 text-right">
+							<label>Database</label>
+						</div>
+						<div class="col-md-8">
+							<select class="form-control" name="databases"
+								id="cbDatabaseList">
+							</select>
+						</div>
+					</div>
+
+					<div class=" relative form-group row">
+						<div class="col-md-4 text-right">
+							<label for="tbFileName">Output file name</label> 
+							</div>
+							<div class="col-md-8">	
+								<input class="form-control" type="text" name="outfilepath" id="tbFileName" />
+							<p id="demo"></p>
+						</div>
+					</div>
+										
+					<div class="relative form-group row">
+						<div class="col-md-12">
+						<button type="button" class="btn btn-primary float-right"
+							onclick="generateFile(true)">Extract
+							Schema</button>
+						</div>
+					</div>
+					
+					<br />
+				</div>
+
+			</div>
+
+			<br />
+
+
+<div class="row">
+		
+		
+		
+</div>
+
+
+
+			<div id="div1"
+				style="position: relative; float: none; width: 1100px; height: 500px; margin-left: auto; margin-right: auto; margin-bottom: 10px; padding: 5px; border: solid 1px #009688;"
+				class="ud_diagram_div"></div>
+
+			<div class="col-md-90 text-center">
+				<label for="lcontains" id="lblContains">The editor uses <a
+					href="http://www.jrromero.net/tools/jsUML2" target="_blank"><u>jsUML2</u></a>
+					library.
+				</label>
+			</div>
+
+<div class="loader" id="idloader"></div>
+
+		</div>
+	</form>
+
+</body>
+
+</html>
